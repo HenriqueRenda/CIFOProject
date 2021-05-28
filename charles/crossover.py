@@ -1,5 +1,5 @@
-from random import randint, uniform
-
+import random
+from random import randint, uniform, sample
 
 def template_co(p1, p2):
     """[summary]
@@ -12,7 +12,7 @@ def template_co(p1, p2):
         [type]: [description]
     """
 
-    return offspring1, offspring2
+    #return offspring1, offspring2
 
 def single_point_co(p1, p2):
     """Implementation of single point crossover.
@@ -43,3 +43,79 @@ def arithmetic_co(p1, p2):
         offspring2[i] = p2[i] * alpha + (1 - alpha) * p1[i]
 
     return offspring1,offspring2
+
+
+
+def cycle_co(p1, p2):
+    # Offspring placeholders - None values make it easy to debug for errors
+    offspring1 = [None] * len(p1)
+    offspring2 = [None] * len(p1)
+    print(f'offspring1: {offspring1}')
+    print(f'offspring2: {offspring2}')
+    print(f'parent1: {p1}')
+    print(f'parent2: {p2}')
+    # While there are still None values in offspring, get the first index of
+    # None and start a "cycle" according to the cycle crossover method
+    while None in offspring1:
+        index = offspring1.index(None)
+        print(f'INDEX: {index}')
+        # alternate parents between cycles beginning on second cycle
+        if index != 0:
+            p1, p2 = p2, p1
+        val1 = p1[index]
+        val2 = p2[index]
+        print(f'index: {index}')
+        print(f'val1: {val1}')
+        print(f'val2: {val2}')
+        print(val2)
+        print(f'parent1: {p1}')
+        print(f'parent2: {p2}')
+        
+        while val1 != val2:
+            offspring1[index] = p1[index]
+            offspring2[index] = p2[index]
+            val2 = p2[index]
+            index = p1.index(val2)
+
+        # In case last values share the same index, fill them in each offspring
+        offspring1[index] = p1[index]
+        offspring2[index] = p2[index]
+
+    return offspring1, offspring2
+
+def pmx_co(p1, p2):
+    # Sample 2 random co points
+    co_points = random.sample(range(len(p1)), 2)
+    print()
+    co_points.sort()
+
+    def PMX(x, y):
+        # Create placeholder for offspring
+        o = [None] * len(x)
+
+        # Copy co segment into offspring
+        o[co_points[0]:co_points[1]] = x[co_points[0]:co_points[1]]
+
+        # Find set of values not in offspring from co segment in P2
+        z = set(y[co_points[0]:co_points[1]]) - set(x[co_points[0]:co_points[1]])
+
+        # Map values in set to corresponding position in offspring
+        for i in z:
+            temp = i
+            index = y.index(x[y.index(temp)])
+            while o[index] != None:
+                temp = index
+                index = y.index(x[temp])
+            o[index] = i
+        # Fill in remaining values
+        while None in o:
+            index = o.index(None)
+            o[index] = y[index]
+        return o
+
+    # Call function twice with parents reversed
+    o1, o2 = (
+        PMX(p1, p2),
+        PMX(p2, p1)
+    )
+

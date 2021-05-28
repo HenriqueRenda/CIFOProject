@@ -1,4 +1,6 @@
 from random import uniform, sample
+from operator import attrgetter
+
 
 def fps(population):
     """Fitness proportionate selection implementation.
@@ -22,12 +24,23 @@ def fps(population):
 
 def tournament(population, size=20):
     #Select individuals based on tournament size
-    tournament = sample(population.individuals, size)
+    #print(population[0].score)
+    tournament = sample(population, size)
     #Check if the problem is max or min
-    if population.optim == 'max':
-        return max(tournament, key=attrgetter("fitness"))
-    elif population.optim == 'min':
-        return min(tournament, key=attrgetter("fitness"))
-    else:
-        raise Exception("No optimization specified (min or max).")
+    maximo = max(tournament, key=attrgetter("score"))
+    return population.index(maximo)
 
+
+def rank(population):
+    # Rank individuals based on optim approach
+    population.sort(key=attrgetter('score'))
+    # Sum all ranks
+    total = sum(range(len(population)))
+    # Get random position
+    spin = uniform(0, total)
+    position = 0
+    # Iterate until spin is found
+    for count, individual in enumerate(population):
+        position += count + 1
+        if position > spin:
+            return count

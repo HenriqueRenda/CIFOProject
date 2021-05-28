@@ -1,14 +1,26 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu May 27 11:31:38 2021
+
+@author: beatrizfreitas
+"""
+
 # Importing required libraries
 import pygame
-from tetris import Tetris
 import random
+from tetris import Tetris
 from tetrisAgents import GeneticAgent
-from charles import selection, crossover, mutation
+from charles import crossover,selection,mutation
+import time 
+import csv
+
 
 
 # Tetris population class
 class PopulationTetris:
 	def __init__(self, populationSize, mutationRate, maxGenerations):
+		self.timestamp = int(time.time())
 		self.populationSize = populationSize	# No of game instances to run
 		self.mutationRate = mutationRate	# Mutation rate to mutate each game genetics
 		self.maxGenerations = maxGenerations	# Maximum generations the game should run
@@ -49,19 +61,26 @@ class PopulationTetris:
 		while(len(newAgentPool)<len(self.agentPool)):
 			child1 = GeneticAgent()	# Creating first child
 			child2 = GeneticAgent()	# Creating second child
-			parent1 = self.agentPool[selection.fps(self.tetrisPool)]	# Choosing first parent out of population
-			parent2 = self.agentPool[selection.fps(self.tetrisPool)]	# Choosing second parent out of population
-			# Stacking genes
+			parent1 = self.agentPool[selection.tournament(self.tetrisPool)]	# Choosing first parent out of population
+			parent2 = self.agentPool[selection.tournament(self.tetrisPool)]	# Choosing second parent out of population
+			#parent1 = self.agentPool[selection.rank(self.tetrisPool)]	# Choosing first parent out of population
+			#parent2 = self.agentPool[selection.rank(self.tetrisPool)]
+            #parent1 = self.agentPool[selection.fps(self.tetrisPool)]	# Choosing first parent out of population
+			#parent2 = self.agentPool[selection.fps(self.tetrisPool)]
+            # Stacking genes
 			parent1Gene = [parent1.weight_height, parent1.weight_holes, parent1.weight_bumpiness, parent1.weight_line_clear]
 			parent2Gene = [parent2.weight_height, parent2.weight_holes, parent2.weight_bumpiness, parent2.weight_line_clear]
 			
 			# Generating childs from crossover
-			gene1, gene2 = crossover.single_point_co(parent1Gene, parent2Gene)	# Comment/Uncomment out for running the corresponding method
-			# gene1, gene2 = crossover.arithmetic_co(parent1Gene, parent2Gene)	# Comment/Uncomment out for running the corresponding method
-
+			#gene1, gene2 = crossover.single_point_co(parent1Gene, parent2Gene)	# Comment/Uncomment out for running the corresponding method
+			gene1, gene2 = crossover.arithmetic_co(parent1Gene, parent2Gene)	# Comment/Uncomment out for running the corresponding method
 			# Mutating child genes
 			child1Gene = mutation.random_mutation(gene1, self.mutationRate)
 			child2Gene = mutation.random_mutation(gene2, self.mutationRate)
+			#child1Gene = mutation.swap_mutation(gene1)
+			#child2Gene = mutation.swap_mutation(gene2)
+            #child1Gene = mutation.inversion_mutation(gene1)
+			#child2Gene = mutation.inversion_mutation(gene2)
 			# Changing genes of created childrens
 			child1.weight_height, child1.weight_holes, child1.weight_bumpiness, child1.weight_line_clear = child1Gene
 			child2.weight_height, child2.weight_holes, child2.weight_bumpiness, child2.weight_line_clear = child2Gene
@@ -71,16 +90,17 @@ class PopulationTetris:
 
 	# Method for running game
 	def update(self):
-		global time_elapsed	# Getting global variable
+		global time_elapsed	# Getting global variable     
 		# Dealing inputs
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				pygame.quit()
-		time_elapsed += 1	# Incrementing time_elapsed on every call
+		time_elapsed += 1	# Incrementing time_elapsed on every call               
 		# Condition executed if state of all game in population is gameover or if time_elapsed reaches 1000
 		if all(game.gameover for game in self.tetrisPool) or time_elapsed%1000==0:
-			self.screen.fill((255, 255, 255))
-			time_elapsed = 0	# Changing time_elapsed 
+			tempo_por_geracao = time_elapsed            
+			self.screen.fill((255, 255, 255))           
+			time_elapsed = 0	# Changing time_elapsed
 			self.bestInGen = 0	# Keeping track of best in each generation
 			# Looping through the population for finding best
 			for i in self.tetrisPool:
@@ -94,17 +114,20 @@ class PopulationTetris:
 			self.generateNewPopulation()
 			# Updating generation count
 			self.generation += 1
+            #writing everything into a csv for statistics
+			with open(f'run_{self.timestamp}.csv', 'a', newline='') as file:
+				writer = csv.writer(file)
+				writer.writerow([self.generation, self.bestInGen, self.best,tempo_por_geracao])   
 			# Resetting each game
 			for tetris in self.tetrisPool:
-				tetris.start_game()
+				tetris.start_game()          
 		# Running each game with the help of inputs received from agents
 		for index, game in enumerate(self.tetrisPool):
 			# if not game.gameover:
 			game.run(self.agentPool[index].get_action(game))
 		pygame.display.update()	# Updating screen
 		# Displaying message
-		msg = f"Generation\n{self.generation}\n \nBest in Generation\n{self.bestInGen}\n \nBest till now\n{self.best}\n \nTime Limit\n{time_elapsed}/1000"
-		# Drawing message on screen
+		msg = f"Generation\n{self.generation}\n \nBest in Generation\n{self.bestInGen}\n \nBest till now\n{self.best}\n \nTime Limit\n{time_elapsed}"
 		self.drawText(msg, 885)
 		dont_burn_my_cpu.tick(30)
 
@@ -118,6 +141,10 @@ class PopulationTetris:
 			position = (xCord - msgim_center_x,
 						self.SCREEN_HEIGHT // 4 - msgim_center_y + i*25)
 			self.screen.blit(msg_image, position)
+	def log(self):
+		with open(f'run_{self.timestamp}.csv', 'a', newline='') as file:
+			writer = csv.writer(file)
+			writer.writerow([self.generation, self.bestInGen, self.best,time_elapsed])    
 
 
 populationSize = 40	# Population size
@@ -146,3 +173,4 @@ while True:
 	population.drawText(msg, 500)
 	# Updating screen
 	pygame.display.update()
+

@@ -272,6 +272,6 @@ class Tetris(object):
 	def get_state(self):
 		return {"board": numpy.copy(self.board), "stone": numpy.copy(self.stone), "stone_x": self.stone_x, "stone_y": self.stone_y, "score": self.score, "gameover": self.gameover, "needs_actions": self.needs_actions}
 
-# if __name__ == '__main__':
-#   App = Tetris()
-#   App.run()
+#if __name__ == '__main__':
+ #  App = Tetris()
+  # App.run()
